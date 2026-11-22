@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POLYAI — Smart Money Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#070b0f;
+  --s1:#0c1118;
+  --s2:#111922;
+  --s3:#172030;
+  --border:#1c2d3f;
+  --border2:#243848;
+  --accent:#00e5a0;
+  --accent2:#00b87d;
+  --warn:#f5a623;
+  --danger:#ff4d4d;
+  --info:#3b9eff;
+  --muted:#3d5570;
+  --muted2:#5a7a96;
+  --text:#adc8e0;
+  --text2:#7a9db8;
+  --white:#e0f0ff;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;overflow:hidden}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-rows:48px 1fr;grid-template-columns:220px 1fr 300px;height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{grid-column:1/-1;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:16px;z-index:10}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--accent);letter-spacing:.1em;display:flex;align-items:center;gap:6px}
+.logo-icon{width:22px;height:22px;background:var(--accent);border-radius:4px;display:flex;align-items:center;justify-content:center;color:#000;font-size:11px;font-weight:900}
+.topbar-sep{width:1px;height:20px;background:var(--border);margin:0 4px}
+.topbar-stat{display:flex;flex-direction:column;gap:1px}
+.topbar-stat .lbl{font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.08em}
+.topbar-stat .val{font-size:13px;font-weight:600;color:var(--white)}
+.topbar-stat .val.green{color:var(--accent)}
+.topbar-stat .val.amber{color:var(--warn)}
+.spacer{flex:1}
+.status-pill{display:flex;align-items:center;gap:5px;font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid var(--border2)}
+.status-dot{width:6px;height:6px;border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-sm{padding:5px 12px;border-radius:4px;font-family:inherit;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--s2);color:var(--text2);text-transform:uppercase;letter-spacing:.06em;transition:all .15s}
+.btn-sm:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm.primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn-sm.primary:hover{background:var(--accent2)}
+.btn-sm:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--s1);border-right:1px solid var(--border);overflow-y:auto;padding:12px 0}
+.nav-section{padding:6px 12px 4px;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 16px;cursor:pointer;transition:all .1s;border-left:2px solid transparent;color:var(--text2);font-size:11px}
+.nav-item:hover{background:var(--s2);color:var(--text)}
+.nav-item.active{background:var(--s2);color:var(--accent);border-left-color:var(--accent)}
+.nav-item .icon{width:14px;text-align:center;font-size:12px}
+.nav-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:9px;padding:1px 5px;border-radius:10px;font-weight:700}
+.mini-stat{margin:8px 12px;background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px}
+.mini-stat .ms-label{font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.mini-stat .ms-val{font-size:20px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif}
+.mini-stat .ms-sub{font-size:9px;color:var(--muted2);margin-top:2px}
+
+/* ── MAIN ── */
+.main{overflow-y:auto;background:var(--bg)}
+.main::-webkit-scrollbar{width:4px}
+.main::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── RIGHT PANEL ── */
+.rpanel{background:var(--s1);border-left:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.rpanel::-webkit-scrollbar{width:3px}
+.rpanel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.rpanel-section{border-bottom:1px solid var(--border);flex-shrink:0}
+.rpanel-title{padding:10px 14px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted2);display:flex;align-items:center;justify-content:space-between}
+.rpanel-title span{color:var(--accent);font-size:9px}
+
+/* ── PAGE SECTIONS ── */
+.page{display:none;padding:16px}
+.page.active{display:block}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.page-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--white)}
+.page-sub{font-size:10px;color:var(--muted2);margin-top:2px}
+
+/* ── CARDS ── */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:10px;transition:border-color .15s}
+.card:hover{border-color:var(--border2)}
+.card-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:12px 14px}
+
+/* ── CLUSTER CARD ── */
+.cluster-card{background:var(--s1);border-radius:6px;border:1px solid var(--border);padding:12px 14px;margin-bottom:8px;transition:all .2s;animation:fadeIn .3s ease-out;cursor:pointer}
+.cluster-card:hover{border-color:var(--border2);background:var(--s2)}
+.cluster-card.high{border-left:3px solid var(--danger)}
+.cluster-card.med{border-left:3px solid var(--warn)}
+.cluster-card.low{border-left:3px solid var(--accent)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.cc-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}
+.cc-q{flex:1;font-size:11px;color:var(--white);line-height:1.5}
+.cc-badges{display:flex;gap:4px;flex-shrink:0}
+.badge{padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.04em}
+.badge-yes{background:rgba(0,229,160,.1);color:var(--accent);border:1px solid rgba(0,229,160,.2)}
+.badge-no{background:rgba(255,77,77,.1);color:var(--danger);border:1px solid rgba(255,77,77,.2)}
+.badge-alert{background:rgba(245,166,35,.1);color:var(--warn);border:1px solid rgba(245,166,35,.2)}
+.conv-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.conv-label{font-size:9px;color:var(--muted2);width:60px;text-transform:uppercase;letter-spacing:.06em}
+.conv-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.conv-fill{height:100%;border-radius:2px;transition:width .8s ease}
+.conv-score{font-size:12px;font-weight:700;width:28px;text-align:right}
+.cc-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.cm-item{background:var(--s2);border-radius:4px;padding:5px 7px}
+.cm-label{font-size:8px;color:var(--muted2);text-transform:uppercase;letter-spacing:.05em}
+.cm-val{font-size:11px;font-weight:600;color:var(--text);margin-top:1px}
+.cm-val.green{color:var(--accent)}
+.cm-val.amber{color:var(--warn)}
+.cc-time{font-size:9px;color:var(--muted);margin-top:6px}
+
+/* ── WALLET TABLE ── */
+.wtable{width:100%;border-collapse:collapse}
+.wtable th{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted2);padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);background:var(--s1);position:sticky;top:0;z-index:1}
+.wtable th:not(:first-child):not(:nth-child(2)){text-align:right}
+.wtable td{padding:6px 8px;border-bottom:1px solid rgba(28,45,63,.5);font-size:11px;color:var(--text);vertical-align:middle}
+.wtable td:not(:first-child):not(:nth-child(2)){text-align:right}
+.wtable tr:hover td{background:var(--s2);cursor:pointer}
+.waddr{color:var(--info);font-size:10px}
+.wrank{color:var(--muted2);font-size:10px;width:28px}
+.pos-val{color:var(--accent)}
+.neg-val{color:var(--danger)}
+.roi-bar{display:inline-flex;align-items:center;gap:4px}
+.mini-bar{width:32px;height:3px;background:var(--border);border-radius:1px;overflow:hidden}
+.mini-bar-fill{height:100%;border-radius:1px}
+
+/* ── TRADE FEED ── */
+.trade-item{padding:8px 14px;border-bottom:1px solid rgba(28,45,63,.5);display:flex;gap:8px;align-items:center;transition:background .1s;animation:slideIn .2s ease-out}
+@keyframes slideIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+.trade-item:hover{background:var(--s2)}
+.trade-side{width:28px;height:20px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0}
+.side-buy{background:rgba(0,229,160,.12);color:var(--accent)}
+.side-sell{background:rgba(255,77,77,.12);color:var(--danger)}
+.trade-info{flex:1;min-width:0}
+.trade-title{font-size:10px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trade-addr{font-size:9px;color:var(--info)}
+.trade-right{text-align:right;flex-shrink:0}
+.trade-size{font-size:11px;font-weight:600;color:var(--white)}
+.trade-price{font-size:9px;color:var(--muted2)}
+.trade-time{font-size:9px;color:var(--muted)}
+
+/* ── ALERTS ── */
+.alert-item{padding:10px 14px;border-bottom:1px solid rgba(28,45,63,.5);display:flex;gap:10px;align-items:center;cursor:pointer}
+.alert-item:hover{background:var(--s2)}
+.alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.alert-content{flex:1;min-width:0}
+.alert-q{font-size:10px;color:var(--text);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.alert-meta{font-size:9px;color:var(--muted2);margin-top:2px}
+.alert-score{font-size:13px;font-weight:700;flex-shrink:0}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:var(--muted2)}
+.empty-icon{font-size:28px;margin-bottom:8px;opacity:.4}
+.empty-text{font-size:11px;line-height:1.8}
+
+/* ── STATS GRID ── */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.stat-box{background:var(--s1);border:1px solid var(--border);border-radius:6px;padding:12px}
+.stat-box .sb-label{font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.08em}
+.stat-box .sb-val{font-size:22px;font-weight:700;color:var(--accent);font-family:'Syne',sans-serif;margin:3px 0}
+.stat-box .sb-sub{font-size:9px;color:var(--muted2)}
+
+/* ── WALLET DETAIL ── */
+.wallet-detail{display:none}
+.wallet-detail.open{display:block}
+.wd-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.wd-back{cursor:pointer;color:var(--muted2);font-size:11px;display:flex;align-items:center;gap:4px}
+.wd-back:hover{color:var(--accent)}
+.wd-addr{font-size:11px;color:var(--info);word-break:break-all}
+.pos-card{background:var(--s2);border:1px solid var(--border);border-radius:5px;padding:10px;margin-bottom:6px}
+.pos-title{font-size:10px;color:var(--text);line-height:1.4;margin-bottom:5px}
+.pos-meta{display:flex;gap:12px;font-size:9px;color:var(--muted2)}
+.pos-meta span{display:flex;gap:3px;align-items:center}
+
+/* ── SCROLLBAR ── */
+.sidebar::-webkit-scrollbar,.rpanel::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb,.rpanel::-webkit-scrollbar-thumb{background:var(--border)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="logo">
+      <div class="logo-icon">◈</div>
+      POLYAI
+    </div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-stat">
+      <div class="lbl">Wallets</div>
+      <div class="val green" id="tbWallets">—</div>
+    </div>
+    <div class="topbar-stat">
+      <div class="lbl">Clusters</div>
+      <div class="val" id="tbClusters">—</div>
+    </div>
+    <div class="topbar-stat">
+      <div class="lbl">Alerts</div>
+      <div class="val amber" id="tbAlerts">—</div>
+    </div>
+    <div class="topbar-stat">
+      <div class="lbl">Whales</div>
+      <div class="val" id="tbWhales" style="color:var(--info)">—</div>
+    </div>
+    <div class="topbar-stat">
+      <div class="lbl">Top Score</div>
+      <div class="val" id="tbTopScore">—</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="status-pill" id="statusPill">
+      <div class="status-dot" style="background:var(--muted)"></div>
+      <span id="statusText">Connecting...</span>
+    </div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-stat" style="text-align:right">
+      <div class="lbl">Next Run</div>
+      <div class="val" id="tbNextRun" style="font-size:11px">—</div>
+    </div>
+    <button class="btn-sm" onclick="testTg()" id="tgBtn">TG TEST</button>
+    <button class="btn-sm primary" onclick="runNow()" id="runBtn">▶ RUN NOW</button>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav-section">Monitor</div>
+    <div class="nav-item active" onclick="showPage('clusters',this)">
+      <span class="icon">⬡</span> Clusters
+      <span class="nav-badge" id="clusterBadge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="showPage('wallets',this)">
+      <span class="icon">◎</span> Wallets
+    </div>
+    <div class="nav-item" onclick="showPage('trades',this)">
+      <span class="icon">⟳</span> Live Trades
+    </div>
+    <div class="nav-item" onclick="showPage('whales',this)">
+      <span class="icon">⬢</span> Whale Alerts
+      <span class="nav-badge" id="whaleBadge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="showPage('alerts',this)">
+      <span class="icon">◈</span> Alert History
+    </div>
+    <div class="nav-item" onclick="showPage('manage',this)">
+      <span class="icon">⚙</span> Watchlist
+    </div>
+
+    <div class="nav-section" style="margin-top:8px">Stats</div>
+    <div class="mini-stat">
+      <div class="ms-label">Wallets Tracked</div>
+      <div class="ms-val" id="swWallets">—</div>
+      <div class="ms-sub">passing filters</div>
+    </div>
+    <div class="mini-stat">
+      <div class="ms-label">Avg Conviction</div>
+      <div class="ms-val" id="swAvgConv">—</div>
+      <div class="ms-sub">across clusters</div>
+    </div>
+    <div class="mini-stat">
+      <div class="ms-label">Alerts Sent</div>
+      <div class="ms-val" id="swAlerts" style="color:var(--warn)">—</div>
+      <div class="ms-sub">conviction ≥ 75</div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- CLUSTERS PAGE -->
+    <div class="page active" id="page-clusters">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Smart Money Clusters</div>
+          <div class="page-sub">Markets where top wallets are aligned</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="minScore" onchange="loadClusters()" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-family:inherit;font-size:10px">
+            <option value="0">All scores</option>
+            <option value="50">Score ≥ 50</option>
+            <option value="75" selected>Score ≥ 75</option>
+            <option value="85">Score ≥ 85</option>
+          </select>
+        </div>
+      </div>
+      <div id="clusterList"></div>
+    </div>
+
+    <!-- WALLETS PAGE -->
+    <div class="page" id="page-wallets">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Top Wallets</div>
+          <div class="page-sub">Ranked by profit — click a wallet to see positions</div>
+        </div>
+      </div>
+      <div id="walletMain">
+        <div class="card">
+          <table class="wtable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Wallet</th>
+                <th>Profit</th>
+                <th>ROI</th>
+                <th>Win%</th>
+                <th>Trades</th>
+                <th>Volume</th>
+              </tr>
+            </thead>
+            <tbody id="walletBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Wallet detail view -->
+      <div class="wallet-detail" id="walletDetail">
+        <div class="wd-header">
+          <div class="wd-back" onclick="closeWalletDetail()">← Back</div>
+          <div class="wd-addr" id="wdAddr"></div>
+          <a id="wdLink" href="#" target="_blank" class="btn-sm">View on Polymarket ↗</a>
+        </div>
+        <div class="page-sub" style="margin-bottom:12px">Open Positions</div>
+        <div id="wdPositions"></div>
+      </div>
+    </div>
+
+    <!-- TRADES PAGE -->
+    <div class="page" id="page-trades">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Recent Trades</div>
+          <div class="page-sub">Latest activity from tracked wallets</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <select id="tradeSide" onchange="loadTrades()" style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-family:inherit;font-size:10px">
+            <option value="">All sides</option>
+            <option value="BUY">BUY only</option>
+            <option value="SELL">SELL only</option>
+          </select>
+        </div>
+      </div>
+      <div class="card" style="padding:0">
+        <div id="tradeList"></div>
+      </div>
+    </div>
+
+    <!-- ALERTS PAGE -->
+    <div class="page" id="page-alerts">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Alert History</div>
+          <div class="page-sub">All Telegram + Discord alerts fired</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0">
+        <div id="alertList"></div>
+      </div>
+    </div>
+
+    <!-- WHALES PAGE -->
+    <div class="page" id="page-whales">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Whale Alerts</div>
+          <div class="page-sub">Single positions >= $10K USDC from top wallets</div>
+        </div>
+        <button class="btn-sm" onclick="window.open(API+'/export/whales','_blank')">EXPORT CSV</button>
+      </div>
+      <div class="card" style="padding:0">
+        <div id="whaleList"></div>
+      </div>
+    </div>
+
+    <!-- MANAGE PAGE (Watchlist/Blacklist) -->
+    <div class="page" id="page-manage">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Watchlist / Blacklist</div>
+          <div class="page-sub">Force-track or exclude specific wallets</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="card">
+          <div class="card-header">
+            <span style="font-size:11px;font-weight:600;color:var(--accent)">Watchlist</span>
+            <span style="font-size:9px;color:var(--muted2)">Always tracked</span>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;gap:6px;margin-bottom:10px">
+              <input id="watchInput" placeholder="0x address..." style="flex:1;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-family:inherit;font-size:10px">
+              <button class="btn-sm primary" onclick="addWatch()">ADD</button>
+            </div>
+            <div id="watchlistItems" style="font-size:10px;color:var(--text2)"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span style="font-size:11px;font-weight:600;color:var(--danger)">Blacklist</span>
+            <span style="font-size:9px;color:var(--muted2)">Always excluded</span>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;gap:6px;margin-bottom:10px">
+              <input id="blackInput" placeholder="0x address..." style="flex:1;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:4px;font-family:inherit;font-size:10px">
+              <button class="btn-sm" style="border-color:var(--danger);color:var(--danger)" onclick="addBlack()">BLOCK</button>
+            </div>
+            <div id="blacklistItems" style="font-size:10px;color:var(--text2)"></div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="page-title" style="font-size:13px;margin-bottom:8px">Data Export</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-sm" onclick="window.open(API+'/export/wallets','_blank')">WALLETS CSV</button>
+          <button class="btn-sm" onclick="window.open(API+'/export/clusters','_blank')">CLUSTERS CSV</button>
+          <button class="btn-sm" onclick="window.open(API+'/export/whales','_blank')">WHALES CSV</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="rpanel">
+    <div class="rpanel-section">
+      <div class="rpanel-title">Live Feed <span id="feedCount">0 trades</span></div>
+      <div id="liveFeed" style="max-height:280px;overflow-y:auto"></div>
+    </div>
+    <div class="rpanel-section">
+      <div class="rpanel-title">Top Clusters <span>by conviction</span></div>
+      <div id="topClusters"></div>
+    </div>
+    <div class="rpanel-section" style="flex:1">
+      <div class="rpanel-title">Pipeline Log</div>
+      <div id="pipelineLog" style="padding:8px 14px;font-size:10px;color:var(--muted2);line-height:1.8"></div>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+const API = 'http://localhost:8000/api'
+let currentPage = 'clusters'
+let seenTradeHashes = new Set()
+let feedItems = []
+
+// ── Helpers ──────────────────────────────────────────────────
+const $ = id => document.getElementById(id)
+function fmtUSDC(n){
+  if(!n||isNaN(n)) return '$0'
+  if(n>=1e6) return '$'+(n/1e6).toFixed(1)+'M'
+  if(n>=1e3) return '$'+(n/1e3).toFixed(1)+'K'
+  return '$'+Math.round(n)
+}
+function timeAgo(iso){
+  if(!iso) return '—'
+  const d=(Date.now()-new Date(iso).getTime())/1000
+  if(d<60) return Math.round(d)+'s ago'
+  if(d<3600) return Math.round(d/60)+'m ago'
+  if(d<86400) return Math.round(d/3600)+'h ago'
+  return Math.round(d/86400)+'d ago'
+}
+function convColor(s){
+  if(s>=85) return 'var(--danger)'
+  if(s>=75) return 'var(--warn)'
+  if(s>=50) return 'var(--info)'
+  return 'var(--accent)'
+}
+function convClass(s){
+  if(s>=85) return 'high'
+  if(s>=75) return 'med'
+  return 'low'
+}
+async function apiFetch(path){
+  const r = await fetch(API+path)
+  if(!r.ok) throw new Error(r.status)
+  return r.json()
+}
+
+// ── Navigation ───────────────────────────────────────────────
+function showPage(name, el){
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'))
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
+  el.classList.add('active')
+  $('page-'+name).classList.add('active')
+  currentPage = name
+  if(name==='clusters') loadClusters()
+  if(name==='wallets')  loadWallets()
+  if(name==='trades')   loadTrades()
+  if(name==='alerts')   loadAlerts()
+  if(name==='whales')   loadWhales()
+  if(name==='manage')   { loadWatchlist(); loadBlacklist() }
+}
+
+// ── Stats / Status ───────────────────────────────────────────
+async function loadStats(){
+  try{
+    const s = await apiFetch('/stats')
+    $('tbWallets').textContent   = s.wallets_tracked||0
+    $('tbClusters').textContent  = s.clusters_detected||0
+    $('tbAlerts').textContent    = s.alerts_sent||0
+    $('tbWhales').textContent    = s.whale_events||0
+    $('tbTopScore').textContent  = s.top_conviction||0
+    $('swWallets').textContent   = s.wallets_tracked||0
+    $('swAvgConv').textContent   = s.avg_conviction||0
+    $('swAlerts').textContent    = s.alerts_sent||0
+    if(s.clusters_detected>0){
+      $('clusterBadge').textContent = s.clusters_detected
+      $('clusterBadge').style.display = 'inline'
+    }
+    if(s.whale_events>0){
+      $('whaleBadge').textContent = s.whale_events
+      $('whaleBadge').style.display = 'inline'
+    }
+  }catch(e){}
+}
+
+async function loadStatus(){
+  try{
+    const s = await apiFetch('/status')
+    const pill = $('statusPill')
+    const dot  = pill.querySelector('.status-dot')
+    if(s.status==='online'){
+      dot.style.background='var(--accent)'
+      $('statusText').textContent='LIVE'
+    }
+    if(s.last_run&&s.last_run.run_at){
+      const lr = s.last_run
+      $('pipelineLog').innerHTML =
+        `<div>Last: <span style="color:var(--text)">${timeAgo(lr.run_at)}</span></div>` +
+        `<div>Wallets checked: <span style="color:var(--accent)">${lr.wallets_checked||0}</span></div>` +
+        `<div>Wallets qualified: <span style="color:var(--accent)">${lr.wallets_qualified||0}</span></div>` +
+        `<div>Clusters found: <span style="color:var(--warn)">${lr.clusters_found||0}</span></div>` +
+        `<div>Alerts sent: <span style="color:var(--warn)">${lr.alerts_sent||0}</span></div>` +
+        `<div>Whale positions: <span style="color:var(--info)">${lr.whale_positions||0}</span></div>` +
+        `<div>Whale alerts: <span style="color:var(--info)">${lr.whale_alerts||0}</span></div>` +
+        `<div>Duration: <span style="color:var(--text)">${lr.elapsed_seconds||0}s</span></div>`
+    }
+    if(s.next_run){
+      const mins = Math.max(0,Math.round((new Date(s.next_run)-Date.now())/60000))
+      $('tbNextRun').textContent = `${mins}m`
+    }
+  }catch(e){
+    $('statusText').textContent='Offline'
+    $('statusPill').querySelector('.status-dot').style.background='var(--danger)'
+    $('pipelineLog').innerHTML='<div style="color:var(--danger)">Backend offline<br>Run: python main.py</div>'
+  }
+}
+
+// ── Clusters ─────────────────────────────────────────────────
+async function loadClusters(){
+  const minScore = $('minScore').value||0
+  const list = $('clusterList')
+  try{
+    const data = await apiFetch(`/clusters?limit=30&min_score=${minScore}`)
+    // Also update top clusters panel
+    renderTopClusters(data.slice(0,5))
+    if(!data.length){
+      list.innerHTML=`<div class="empty"><div class="empty-icon">⬡</div><div class="empty-text">No clusters found yet.<br>Run the pipeline to start monitoring.</div></div>`
+      return
+    }
+    list.innerHTML = data.map(c=>{
+      const col = convColor(c.conviction_score)
+      const cls = convClass(c.conviction_score)
+      return `
+      <div class="cluster-card ${cls}" onclick="openClusterDetail('${c.market_id}')">
+        <div class="cc-top">
+          <div class="cc-q">${c.market_question||c.market_id}</div>
+          <div class="cc-badges">
+            <span class="badge badge-${c.outcome==='YES'?'yes':'no'}">${c.outcome}</span>
+            ${c.alert_sent?'<span class="badge badge-alert">📨 TG</span>':''}
+          </div>
+        </div>
+        <div class="conv-row">
+          <div class="conv-label">Conviction</div>
+          <div class="conv-track"><div class="conv-fill" style="width:${c.conviction_score}%;background:${col}"></div></div>
+          <div class="conv-score" style="color:${col}">${c.conviction_score.toFixed(0)}</div>
+        </div>
+        <div class="cc-meta">
+          <div class="cm-item">
+            <div class="cm-label">Wallets</div>
+            <div class="cm-val">${c.wallet_count}</div>
+          </div>
+          <div class="cm-item">
+            <div class="cm-label">Avg ROI</div>
+            <div class="cm-val green">+${c.avg_roi.toFixed(1)}%</div>
+          </div>
+          <div class="cm-item">
+            <div class="cm-label">Win Rate</div>
+            <div class="cm-val">${c.avg_win_rate.toFixed(1)}%</div>
+          </div>
+          <div class="cm-item">
+            <div class="cm-label">Size</div>
+            <div class="cm-val amber">${fmtUSDC(c.total_size_usdc)}</div>
+          </div>
+        </div>
+        <div class="cc-time">${timeAgo(c.detected_at)} · hist. acc. ${c.historical_accuracy}%</div>
+      </div>`
+    }).join('')
+  }catch(e){
+    list.innerHTML=`<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">Backend offline.<br>Start: python main.py</div></div>`
+  }
+}
+
+function renderTopClusters(clusters){
+  const el = $('topClusters')
+  if(!clusters.length){
+    el.innerHTML='<div style="padding:12px 14px;font-size:10px;color:var(--muted2)">No clusters yet</div>'
+    return
+  }
+  el.innerHTML = clusters.map(c=>`
+    <div style="padding:8px 14px;border-bottom:1px solid rgba(28,45,63,.5)">
+      <div style="font-size:10px;color:var(--text);line-height:1.4;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.market_question||c.market_id}</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="flex:1;height:3px;background:var(--border);border-radius:1px;overflow:hidden">
+          <div style="height:100%;width:${c.conviction_score}%;background:${convColor(c.conviction_score)};border-radius:1px"></div>
+        </div>
+        <span style="font-size:10px;font-weight:700;color:${convColor(c.conviction_score)}">${c.conviction_score.toFixed(0)}</span>
+        <span class="badge badge-${c.outcome==='YES'?'yes':'no'}" style="font-size:8px">${c.outcome}</span>
+      </div>
+    </div>`).join('')
+}
+
+function openClusterDetail(marketId){
+  // Switch to wallets filtered by this market — future enhancement
+}
+
+// ── Wallets ──────────────────────────────────────────────────
+async function loadWallets(){
+  const body = $('walletBody')
+  $('walletMain').style.display='block'
+  $('walletDetail').classList.remove('open')
+  try{
+    const data = await apiFetch('/wallets?limit=100')
+    if(!data.wallets.length){
+      body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted2)">No wallets yet — run pipeline first</td></tr>'
+      return
+    }
+    body.innerHTML = data.wallets.map(w=>{
+      const roi = w.roi_30d||0
+      const barW = Math.min(100, Math.abs(roi)/200*100)
+      const barColor = roi>=0?'var(--accent)':'var(--danger)'
+      return `
+      <tr onclick="loadWalletDetail('${w.address}','${w.short}')">
+        <td class="wrank">${w.rank}</td>
+        <td><a class="waddr" href="https://polymarket.com/profile/${w.address}" target="_blank" onclick="event.stopPropagation()">${w.short}</a></td>
+        <td class="pos-val">${fmtUSDC(w.total_profit)}</td>
+        <td>
+          <div class="roi-bar">
+            <div class="mini-bar"><div class="mini-bar-fill" style="width:${barW}%;background:${barColor}"></div></div>
+            <span class="${roi>=0?'pos-val':'neg-val'}">${roi>=0?'+':''}${roi.toFixed(1)}%</span>
+          </div>
+        </td>
+        <td>${w.win_rate.toFixed(0)}%</td>
+        <td style="color:var(--muted2)">${w.total_trades}</td>
+        <td style="color:var(--muted2)">${fmtUSDC(w.volume_usdc)}</td>
+      </tr>`
+    }).join('')
+  }catch(e){
+    body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--danger)">Offline</td></tr>'
+  }
+}
+
+async function loadWalletDetail(address, shortAddr){
+  $('walletMain').style.display='none'
+  $('walletDetail').classList.add('open')
+  $('wdAddr').textContent = address
+  $('wdLink').href = `https://polymarket.com/profile/${address}`
+  const posDiv = $('wdPositions')
+  posDiv.innerHTML='<div style="color:var(--muted2);font-size:11px">Loading positions...</div>'
+  try{
+    const r = await fetch(`${API}/wallets/${address}/positions`)
+    const positions = await r.json()
+    if(!positions.length){
+      posDiv.innerHTML='<div style="color:var(--muted2);font-size:11px;padding:12px 0">No open positions found.</div>'
+      return
+    }
+    posDiv.innerHTML = positions.map(p=>{
+      const pnlColor = p.unrealised_pnl>=0?'var(--accent)':'var(--danger)'
+      const pnlSign  = p.unrealised_pnl>=0?'+':''
+      return `
+      <div class="pos-card">
+        <div class="pos-title">${p.market_question||p.market_id}</div>
+        <div class="pos-meta">
+          <span class="badge badge-${p.outcome==='YES'?'yes':'no'}" style="font-size:8px">${p.outcome}</span>
+          <span>Size: <strong>${fmtUSDC(p.size_usdc)}</strong></span>
+          <span>Entry: <strong>${(p.entry_price*100).toFixed(1)}¢</strong></span>
+          <span>Now: <strong>${(p.current_price*100).toFixed(1)}¢</strong></span>
+          <span style="color:${pnlColor}">PnL: <strong>${pnlSign}${fmtUSDC(p.unrealised_pnl)}</strong></span>
+        </div>
+      </div>`
+    }).join('')
+  }catch(e){
+    posDiv.innerHTML='<div style="color:var(--danger)">Failed to load positions</div>'
+  }
+}
+
+function closeWalletDetail(){
+  $('walletMain').style.display='block'
+  $('walletDetail').classList.remove('open')
+}
+
+// ── Live Trades ──────────────────────────────────────────────
+async function loadTrades(){
+  const list = $('tradeList')
+  const side = $('tradeSide').value
+  try{
+    const url = `/trades?limit=100${side?'&side='+side:''}`
+    const data = await apiFetch(url)
+    if(!data||!data.length){
+      list.innerHTML='<div class="empty"><div class="empty-icon">⟳</div><div class="empty-text">No trades yet</div></div>'
+      return
+    }
+    list.innerHTML = data.map(t=>`
+      <div class="trade-item">
+        <div class="trade-side ${t.side==='BUY'?'side-buy':'side-sell'}">${t.side}</div>
+        <div class="trade-info">
+          <div class="trade-title">${t.title||t.market_question||'Unknown market'}</div>
+          <div class="trade-addr">${(t.proxyWallet||'').slice(0,6)}…${(t.proxyWallet||'').slice(-4)}</div>
+        </div>
+        <div class="trade-right">
+          <div class="trade-size">${fmtUSDC(t.usdcSize||t.size)}</div>
+          <div class="trade-price">@ ${((t.price||0)*100).toFixed(1)}¢ · ${t.outcome||''}</div>
+          <div class="trade-time">${t.timestamp?timeAgo(new Date(t.timestamp*1000).toISOString()):'—'}</div>
+        </div>
+      </div>`).join('')
+  }catch(e){
+    list.innerHTML='<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">Offline</div></div>'
+  }
+}
+
+// ── Live feed (right panel) ───────────────────────────────────
+async function refreshLiveFeed(){
+  try{
+    const data = await apiFetch('/trades?limit=20')
+    if(!data||!data.length) return
+    const feed = $('liveFeed')
+    let newCount = 0
+    const html = data.slice(0,15).map(t=>{
+      const hash = t.transactionHash||t.timestamp+t.proxyWallet
+      const isNew = !seenTradeHashes.has(hash)
+      if(isNew&&hash){ seenTradeHashes.add(hash); newCount++ }
+      return `
+      <div class="trade-item" style="padding:6px 14px">
+        <div class="trade-side ${t.side==='BUY'?'side-buy':'side-sell'}" style="width:24px;height:16px;font-size:7px">${t.side}</div>
+        <div class="trade-info">
+          <div class="trade-title" style="font-size:9px">${(t.title||'').slice(0,30)||'Unknown'}</div>
+          <div class="trade-addr" style="font-size:8px">${(t.proxyWallet||'').slice(0,6)}…</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:10px;font-weight:600;color:var(--white)">${fmtUSDC(t.usdcSize||t.size)}</div>
+          <div style="font-size:8px;color:var(--muted2)">${t.timestamp?timeAgo(new Date(t.timestamp*1000).toISOString()):'—'}</div>
+        </div>
+      </div>`
+    }).join('')
+    feed.innerHTML = html
+    $('feedCount').textContent = `${data.length} trades`
+  }catch(e){}
+}
+
+// ── Alerts ───────────────────────────────────────────────────
+async function loadAlerts(){
+  const list = $('alertList')
+  try{
+    const data = await apiFetch('/alerts?limit=30')
+    if(!data.length){
+      list.innerHTML='<div class="empty"><div class="empty-icon">◈</div><div class="empty-text">No alerts sent yet.<br>Conviction must exceed 75 to fire.</div></div>'
+      return
+    }
+    list.innerHTML = data.map(a=>`
+      <div class="alert-item">
+        <div class="alert-dot" style="background:${a.success?'var(--accent)':'var(--danger)'}"></div>
+        <div class="alert-content">
+          <div class="alert-q">${a.market_question||a.market_id}</div>
+          <div class="alert-meta">${timeAgo(a.sent_at)} · ${a.success?'✓ Delivered':'✗ Failed'}</div>
+        </div>
+        <div class="alert-score" style="color:${convColor(a.conviction_score)}">${a.conviction_score.toFixed(0)}</div>
+      </div>`).join('')
+  }catch(e){
+    list.innerHTML='<div class="empty">Offline</div>'
+  }
+}
+
+// ── Whales ──────────────────────────────────────────────────
+async function loadWhales(){
+  const list = $('whaleList')
+  try{
+    const data = await apiFetch('/whales?limit=30')
+    if(!data.length){
+      list.innerHTML='<div class="empty"><div class="empty-icon">⬢</div><div class="empty-text">No whale positions detected yet.<br>Threshold: $10K+ USDC single positions.</div></div>'
+      return
+    }
+    list.innerHTML = data.map(w=>`
+      <div class="alert-item">
+        <div style="font-size:18px;flex-shrink:0">🐋</div>
+        <div class="alert-content">
+          <div class="alert-q">${w.market_question||w.market_id}</div>
+          <div class="alert-meta">
+            <span class="badge badge-${w.outcome==='YES'?'yes':'no'}" style="font-size:8px;margin-right:4px">${w.outcome}</span>
+            ${w.short} · Win ${w.wallet_win_rate.toFixed(0)}% · ROI ${w.wallet_roi>=0?'+':''}${w.wallet_roi.toFixed(1)}% · ${timeAgo(w.detected_at)}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:14px;font-weight:700;color:var(--warn)">${fmtUSDC(w.size_usdc)}</div>
+        </div>
+      </div>`).join('')
+  }catch(e){
+    list.innerHTML='<div class="empty">Offline</div>'
+  }
+}
+
+// ── Watchlist / Blacklist ────────────────────────────────────
+async function loadWatchlist(){
+  try{
+    const data = await apiFetch('/watchlist')
+    const el = $('watchlistItems')
+    if(!data.watchlist.length){ el.innerHTML='<div style="color:var(--muted);padding:4px 0">Empty</div>'; return }
+    el.innerHTML = data.watchlist.map(a=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--info)">${a.slice(0,6)}…${a.slice(-4)}</span>
+        <span style="cursor:pointer;color:var(--danger);font-size:9px" onclick="removeWatch('${a}')">REMOVE</span>
+      </div>`).join('')
+  }catch(e){}
+}
+async function loadBlacklist(){
+  try{
+    const data = await apiFetch('/blacklist')
+    const el = $('blacklistItems')
+    if(!data.blacklist.length){ el.innerHTML='<div style="color:var(--muted);padding:4px 0">Empty</div>'; return }
+    el.innerHTML = data.blacklist.map(a=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--danger)">${a.slice(0,6)}…${a.slice(-4)}</span>
+        <span style="cursor:pointer;color:var(--muted2);font-size:9px" onclick="removeBlack('${a}')">UNBLOCK</span>
+      </div>`).join('')
+  }catch(e){}
+}
+async function addWatch(){
+  const addr=$('watchInput').value.trim(); if(!addr)return
+  await fetch(API+'/watchlist/'+addr,{method:'POST'})
+  $('watchInput').value=''; loadWatchlist()
+}
+async function addBlack(){
+  const addr=$('blackInput').value.trim(); if(!addr)return
+  await fetch(API+'/blacklist/'+addr,{method:'POST'})
+  $('blackInput').value=''; loadBlacklist()
+}
+async function removeWatch(addr){
+  await fetch(API+'/watchlist/'+addr,{method:'DELETE'})
+  loadWatchlist()
+}
+async function removeBlack(addr){
+  await fetch(API+'/blacklist/'+addr,{method:'DELETE'})
+  loadBlacklist()
+}
+
+// ── Actions ──────────────────────────────────────────────────
+async function runNow(){
+  const btn = $('runBtn')
+  btn.disabled=true; btn.textContent='⟳ RUNNING…'
+  try{
+    await fetch(API+'/pipeline/run',{method:'POST'})
+    await loadAll()
+  }catch(e){}
+  btn.disabled=false; btn.textContent='▶ RUN NOW'
+}
+
+async function testTg(){
+  $('tgBtn').textContent='...'
+  try{
+    const r = await fetch(API+'/alerts/test',{method:'POST'})
+    const d = await r.json()
+    $('tgBtn').textContent = d.success?'✓ SENT':'✗ FAIL'
+  }catch(e){ $('tgBtn').textContent='✗ OFFLINE' }
+  setTimeout(()=>$('tgBtn').textContent='TG TEST',3000)
+}
+
+// ── Polling ──────────────────────────────────────────────────
+async function loadAll(){
+  await Promise.all([loadStats(), loadStatus()])
+  if(currentPage==='clusters') loadClusters()
+  if(currentPage==='wallets')  loadWallets()
+  if(currentPage==='trades')   loadTrades()
+  if(currentPage==='alerts')   loadAlerts()
+  if(currentPage==='whales')   loadWhales()
+  refreshLiveFeed()
+}
+
+// Initial load + refresh intervals
+loadAll()
+setInterval(loadAll, 30000)
+setInterval(refreshLiveFeed, 10000)
+</script>
+</body>
+</html>
